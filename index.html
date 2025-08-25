@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>COW</title>
+    <title>10 Level Cow Game / 10 Seviyeli İnek Oyunu</title>
     <style>
         * {
             box-sizing: border-box;
@@ -39,6 +39,46 @@
         h1 {
             color: #4caf50;
             margin-bottom: 10px;
+        }
+        
+        .language-selector {
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .language-selector button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #e8f5e9;
+            color: #4caf50;
+            border: 1px solid #4caf50;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .language-selector button.active {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .difficulty-selector {
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .difficulty-selector button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #ffecb3;
+            color: #ff9800;
+            border: 1px solid #ff9800;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .difficulty-selector button.active {
+            background-color: #ff9800;
+            color: white;
         }
         
         .level-info {
@@ -82,11 +122,30 @@
             user-select: none;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
             border: 2px solid #9e9e9e;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.3s;
+            z-index: 10;
         }
         
         .cow:hover {
             transform: scale(1.05);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .cow-number {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 25px;
+            height: 25px;
+            background-color: #ff9800;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 11;
         }
         
         .target {
@@ -100,6 +159,26 @@
             align-items: center;
             font-size: 24px;
             color: #388e3c;
+            animation: pulse 2s infinite;
+            z-index: 5;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+        
+        .cow.correct {
+            border: 3px solid #4caf50;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+            animation: celebrate 0.5s ease-in-out;
+        }
+        
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1); }
         }
         
         .controls {
@@ -117,16 +196,22 @@
             color: white;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.2s;
         }
         
         button:hover {
             background-color: #388e3c;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
         }
         
         button:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
+            transform: none;
         }
         
         .instructions {
@@ -141,14 +226,20 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(76, 175, 80, 0.9);
+            background-color: rgba(76, 175, 80, 0.95);
             color: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 10px;
             text-align: center;
             display: none;
             z-index: 100;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
         }
         
         .level-indicator {
@@ -163,10 +254,15 @@
             background-color: #cccccc;
             border-radius: 50%;
             margin: 0 5px;
+            transition: background-color 0.3s;
         }
         
         .level-dot.active {
             background-color: #4caf50;
+        }
+        
+        .level-dot.completed {
+            background-color: #8bc34a;
         }
         
         @media (max-width: 768px) {
@@ -184,6 +280,14 @@
                 font-size: 30px;
             }
             
+            .cow-number {
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
+                top: -8px;
+                right: -8px;
+            }
+            
             .target {
                 width: 70px;
                 height: 70px;
@@ -194,20 +298,30 @@
 <body>
     <div class="container">
         <header>
-            <h1>COW</h1>
-            <p>İnekleri doğru yerlere sürükle ve seviyeleri tamamla!</p>
+            <h1 id="game-title">10 Seviyeli İnek Oyunu</h1>
+            <p id="game-subtitle">İnekleri doğru yerlere sürükle ve seviyeleri tamamla!</p>
+            
+            <div class="language-selector">
+                <button id="lang-tr" class="active">Türkçe</button>
+                <button id="lang-en">English</button>
+            </div>
+            
+            <div class="difficulty-selector">
+                <button id="mode-easy" class="active">Kolay Mod</button>
+                <button id="mode-hard">Zor Mod</button>
+            </div>
         </header>
         
-        <div class="level-info">Seviye 1: İneği yeşil hedef alana sürükle</div>
+        <div class="level-info" id="level-info">Seviye 1: İneği yeşil hedef alana sürükle</div>
         
-        <div class="instructions">
-            <p><strong>Nasıl Oynanır:</strong> İnekleri tutup hedef alanlara sürükleyin. Tüm inekler doğru yerlere yerleştiğinde seviye tamamlanır.</p>
+        <div class="instructions" id="instructions">
+            <p><strong id="how-to-play">Nasıl Oynanır:</strong> <span id="instruction-text">İnekleri tutup hedef alanlara sürükleyin. Tüm inekler doğru yerlere yerleştiğinde seviye tamamlanır.</span></p>
         </div>
         
         <div class="controls">
-            <button id="prev-level" disabled>Önceki Seviye</button>
-            <button id="reset">Yeniden Başlat</button>
-            <button id="next-level">Sonraki Seviye</button>
+            <button id="prev-level" disabled><span id="prev-btn">Önceki Seviye</span></button>
+            <button id="reset"><span id="reset-btn">Yeniden Başlat</span></button>
+            <button id="next-level"><span id="next-btn">Sonraki Seviye</span></button>
         </div>
         
         <div class="game-area">
@@ -221,23 +335,75 @@
         </div>
         
         <div class="success-message" id="success-message">
-            <h2>Tebrikler!</h2>
-            <p>Seviyeyi tamamladınız.</p>
-            <button id="continue">Devam Et</button>
+            <h2 id="congrats-text">Tebrikler!</h2>
+            <p id="level-complete-text">Seviyeyi tamamladınız.</p>
+            <button id="continue"><span id="continue-btn">Devam Et</span></button>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Dil desteği için metinler
+            const translations = {
+                tr: {
+                    title: "10 Seviyeli İnek Oyunu",
+                    subtitle: "İnekleri doğru yerlere sürükle ve seviyeleri tamamla!",
+                    howToPlay: "Nasıl Oynanır:",
+                    instruction: "İnekleri tutup hedef alanlara sürükleyin. Tüm inekler doğru yerlere yerleştiğinde seviye tamamlanır.",
+                    prevBtn: "Önceki Seviye",
+                    resetBtn: "Yeniden Başlat",
+                    nextBtn: "Sonraki Seviye",
+                    congrats: "Tebrikler!",
+                    levelComplete: "Seviyeyi tamamladınız.",
+                    continueBtn: "Devam Et",
+                    levels: [
+                        "Seviye 1: İneği yeşil hedef alana sürükle",
+                        "Seviye 2: İki ineği doğru yerlere yerleştir",
+                        "Seviye 3: Üç ineği doğru yerlere yerleştir",
+                        "Seviye 4: Dört ineği doğru sırayla yerleştir",
+                        "Seviye 5: Beş ineği doğru yerlere yerleştir",
+                        "Seviye 6: İnekleri çapraz şekilde yerleştir",
+                        "Seviye 7: Karmaşık düzende inekleri yerleştir",
+                        "Seviye 8: İnekleri daire şeklinde yerleştir",
+                        "Seviye 9: İnekleri X şeklinde yerleştir",
+                        "Seviye 10: Son Seviye! Tüm inekleri doğru yere yerleştir"
+                    ]
+                },
+                en: {
+                    title: "10 Level Cow Game",
+                    subtitle: "Drag the cows to the right places and complete the levels!",
+                    howToPlay: "How to Play:",
+                    instruction: "Drag and drop the cows to the target areas. When all cows are in the correct places, the level is completed.",
+                    prevBtn: "Previous Level",
+                    resetBtn: "Restart",
+                    nextBtn: "Next Level",
+                    congrats: "Congratulations!",
+                    levelComplete: "You've completed the level.",
+                    continueBtn: "Continue",
+                    levels: [
+                        "Level 1: Drag the cow to the green target area",
+                        "Level 2: Place two cows in the correct places",
+                        "Level 3: Place three cows in the correct places",
+                        "Level 4: Place four cows in the correct order",
+                        "Level 5: Place five cows in the correct places",
+                        "Level 6: Arrange the cows diagonally",
+                        "Level 7: Place cows in a complex pattern",
+                        "Level 8: Arrange cows in a circle",
+                        "Level 9: Arrange cows in an X pattern",
+                        "Level 10: Final Level! Place all cows correctly"
+                    ]
+                }
+            };
+            
             // Oyun verileri
             const levels = [
                 {
-                    instruction: "Seviye 1: İneği yeşil hedef alana sürükle",
+                    instruction: 0, // translations içindeki indeks
                     cows: [{id: 1, x: 50, y: 150}],
                     targets: [{id: 1, x: 600, y: 150, cowId: 1}]
                 },
                 {
-                    instruction: "Seviye 2: İki ineği doğru yerlere yerleştir",
+                    instruction: 1,
                     cows: [
                         {id: 1, x: 50, y: 100},
                         {id: 2, x: 50, y: 250}
@@ -248,7 +414,7 @@
                     ]
                 },
                 {
-                    instruction: "Seviye 3: Üç ineği doğru yerlere yerleştir",
+                    instruction: 2,
                     cows: [
                         {id: 1, x: 50, y: 100},
                         {id: 2, x: 50, y: 200},
@@ -261,7 +427,7 @@
                     ]
                 },
                 {
-                    instruction: "Seviye 4: Dört ineği doğru sırayla yerleştir",
+                    instruction: 3,
                     cows: [
                         {id: 1, x: 50, y: 80},
                         {id: 2, x: 50, y: 180},
@@ -276,7 +442,7 @@
                     ]
                 },
                 {
-                    instruction: "Seviye 5: Beş ineği doğru yerlere yerleştir",
+                    instruction: 4,
                     cows: [
                         {id: 1, x: 30, y: 80},
                         {id: 2, x: 30, y: 180},
@@ -293,7 +459,7 @@
                     ]
                 },
                 {
-                    instruction: "Seviye 6: İnekleri çapraz şekilde yerleştir",
+                    instruction: 5,
                     cows: [
                         {id: 1, x: 50, y: 50},
                         {id: 2, x: 50, y: 150},
@@ -312,7 +478,7 @@
                     ]
                 },
                 {
-                    instruction: "Seviye 7: Karmaşık düzende inekleri yerleştir",
+                    instruction: 6,
                     cows: [
                         {id: 1, x: 30, y: 50},
                         {id: 2, x: 30, y: 150},
@@ -333,7 +499,7 @@
                     ]
                 },
                 {
-                    instruction: "Seviye 8: İnekleri daire şeklinde yerleştir",
+                    instruction: 7,
                     cows: [
                         {id: 1, x: 50, y: 200},
                         {id: 2, x: 100, y: 100},
@@ -356,7 +522,7 @@
                     ]
                 },
                 {
-                    instruction: "Seviye 9: İnekleri X şeklinde yerleştir",
+                    instruction: 8,
                     cows: [
                         {id: 1, x: 50, y: 50},
                         {id: 2, x: 50, y: 150},
@@ -381,7 +547,7 @@
                     ]
                 },
                 {
-                    instruction: "Seviye 10: Son Seviye! Tüm inekleri doğru yere yerleştir",
+                    instruction: 9,
                     cows: [
                         {id: 1, x: 20, y: 50},
                         {id: 2, x: 20, y: 150},
@@ -411,16 +577,40 @@
             
             let currentLevel = 0;
             let draggedCow = null;
+            let currentLanguage = 'tr';
+            let easyMode = true;
+            let completedLevels = new Set();
             
             // DOM elementleri
             const gameBoard = document.getElementById('game-board');
-            const levelInfo = document.querySelector('.level-info');
+            const levelInfo = document.getElementById('level-info');
             const prevLevelBtn = document.getElementById('prev-level');
             const nextLevelBtn = document.getElementById('next-level');
             const resetBtn = document.getElementById('reset');
             const successMessage = document.getElementById('success-message');
             const continueBtn = document.getElementById('continue');
             const levelIndicator = document.getElementById('level-indicator');
+            const langTrBtn = document.getElementById('lang-tr');
+            const langEnBtn = document.getElementById('lang-en');
+            const modeEasyBtn = document.getElementById('mode-easy');
+            const modeHardBtn = document.getElementById('mode-hard');
+            
+            // Metinleri güncelle
+            function updateTexts() {
+                document.getElementById('game-title').textContent = translations[currentLanguage].title;
+                document.getElementById('game-subtitle').textContent = translations[currentLanguage].subtitle;
+                document.getElementById('how-to-play').textContent = translations[currentLanguage].howToPlay;
+                document.getElementById('instruction-text').textContent = translations[currentLanguage].instruction;
+                document.getElementById('prev-btn').textContent = translations[currentLanguage].prevBtn;
+                document.getElementById('reset-btn').textContent = translations[currentLanguage].resetBtn;
+                document.getElementById('next-btn').textContent = translations[currentLanguage].nextBtn;
+                document.getElementById('congrats-text').textContent = translations[currentLanguage].congrats;
+                document.getElementById('level-complete-text').textContent = translations[currentLanguage].levelComplete;
+                document.getElementById('continue-btn').textContent = translations[currentLanguage].continueBtn;
+                
+                // Seviye talimatını güncelle
+                levelInfo.textContent = translations[currentLanguage].levels[levels[currentLevel].instruction];
+            }
             
             // Seviye göstergesini oluştur
             function createLevelIndicator() {
@@ -431,6 +621,9 @@
                     if (i === currentLevel) {
                         dot.classList.add('active');
                     }
+                    if (completedLevels.has(i)) {
+                        dot.classList.add('completed');
+                    }
                     levelIndicator.appendChild(dot);
                 }
             }
@@ -438,7 +631,7 @@
             // Oyun tahtasını oluştur
             function renderLevel() {
                 gameBoard.innerHTML = '';
-                levelInfo.textContent = levels[currentLevel].instruction;
+                levelInfo.textContent = translations[currentLanguage].levels[levels[currentLevel].instruction];
                 
                 // Hedefleri oluştur
                 levels[currentLevel].targets.forEach(target => {
@@ -461,6 +654,14 @@
                     cowElement.textContent = '🐄';
                     cowElement.setAttribute('data-id', cow.id);
                     cowElement.draggable = true;
+                    
+                    // Kolay modda numara göster
+                    if (easyMode) {
+                        const numberElement = document.createElement('div');
+                        numberElement.className = 'cow-number';
+                        numberElement.textContent = cow.id;
+                        cowElement.appendChild(numberElement);
+                    }
                     
                     // Sürükleme olayları
                     cowElement.addEventListener('dragstart', dragStart);
@@ -513,6 +714,7 @@
                 cow.style.top = `${Math.max(0, Math.min(y, maxY))}px`;
                 
                 draggedCow = null;
+                checkLevelCompletion();
             });
             
             // Seviye tamamlama kontrolü
@@ -535,13 +737,17 @@
                             cowRect.top > targetRect.bottom
                         );
                         
-                        if (!isOverlapping) {
+                        if (isOverlapping) {
+                            cowElement.classList.add('correct');
+                        } else {
+                            cowElement.classList.remove('correct');
                             allCorrect = false;
                         }
                     }
                 });
                 
                 if (allCorrect) {
+                    completedLevels.add(currentLevel);
                     setTimeout(() => {
                         successMessage.style.display = 'block';
                     }, 500);
@@ -569,6 +775,33 @@
                 renderLevel();
             }
             
+            // Dil değiştirme
+            function changeLanguage(lang) {
+                currentLanguage = lang;
+                if (lang === 'tr') {
+                    langTrBtn.classList.add('active');
+                    langEnBtn.classList.remove('active');
+                } else {
+                    langEnBtn.classList.add('active');
+                    langTrBtn.classList.remove('active');
+                }
+                updateTexts();
+                renderLevel();
+            }
+            
+            // Zorluk modunu değiştirme
+            function changeDifficulty(isEasy) {
+                easyMode = isEasy;
+                if (isEasy) {
+                    modeEasyBtn.classList.add('active');
+                    modeHardBtn.classList.remove('active');
+                } else {
+                    modeHardBtn.classList.add('active');
+                    modeEasyBtn.classList.remove('active');
+                }
+                renderLevel();
+            }
+            
             // Olay dinleyicileri
             prevLevelBtn.addEventListener('click', prevLevel);
             nextLevelBtn.addEventListener('click', nextLevel);
@@ -578,7 +811,14 @@
                 nextLevel();
             });
             
+            langTrBtn.addEventListener('click', () => changeLanguage('tr'));
+            langEnBtn.addEventListener('click', () => changeLanguage('en'));
+            
+            modeEasyBtn.addEventListener('click', () => changeDifficulty(true));
+            modeHardBtn.addEventListener('click', () => changeDifficulty(false));
+            
             // Oyunu başlat
+            updateTexts();
             renderLevel();
         });
     </script>
